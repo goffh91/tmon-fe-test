@@ -1,0 +1,171 @@
+class Memo {
+  constructor(node, container, memoMap) {
+    this.node = node;
+    this.container = container;
+    this.memoMap = memoMap;
+
+    this.id = new Date().getTime();
+    this.position = { top: 0, left: 0 };
+    this.size = { width: 200, height: 100 };
+    this.zIndex = 0;
+
+    this.node.setAttribute("data-id", this.id);
+    this.header = this.node.querySelector(".header");
+    this._applyMoveHeader();
+
+    this.textArea = this.node.querySelector(".textarea");
+    this.setSize(this.size.width, this.size.height);
+    this.text = this.textArea.innerText;
+    this._bindTextArea();
+
+    this._applySizeBtn();
+    this._applyCloseBtn();
+  }
+
+  static create(data, node, container, memoMap) {
+    const { id, text, zIndex, position, size } = JSON.parse(data);
+    const memo = new Memo(node, container, memoMap);
+    memo.id = id;
+    memo.setText(text);
+    memo.setZindex(zIndex);
+    memo.setPosition(position.top, position.left);
+    memo.setSize(size.width, size.height);
+    return memo;
+  }
+
+  serialize() {
+    return JSON.stringify({
+      id: this.id,
+      text: this.text,
+      zIndex: this.zIndex,
+      position: this.position,
+      size: this.size,
+    });
+  }
+
+  append() {
+    this.container.appendChild(this.node);
+    this.setZindex(this.memoMap.size + 1);
+    this.memoMap.set(this.id, this);
+  }
+
+  remove() {
+    this.container.removeChild(this.node);
+    this.memoMap.delete(this.id);
+  }
+
+  setPosition(top, left) {
+    this.node.style.top = `${top}px`;
+    this.node.style.left = `${left}px`;
+    this.position = { top, left };
+  }
+
+  setSize(width, height) {
+    this.textArea.style.width = `${width}px`;
+    this.textArea.style.height = `${height}px`;
+    this.size = { width, height };
+  }
+
+  setZindex(zIndex) {
+    this.zIndex = zIndex;
+    this.node.style.zIndex = zIndex;
+  }
+
+  setText(text) {
+    this.text = text;
+    this.textArea.innerText = text;
+  }
+
+  _active() {
+    const prevZindex = this.zIndex;
+    this.memoMap.forEach((memo) => {
+      if (memo.id === this.id) {
+        this.setZindex(this.memoMap.size);
+      } else {
+        if (memo.zIndex > prevZindex) {
+          memo.setZindex(memo.zIndex - 1);
+        }
+      }
+    });
+  }
+
+  _bindTextArea() {
+    const textAreaChanged = (e) => {
+      this.text = this.textArea.innerText;
+    };
+    this.textArea.addEventListener("keyup", textAreaChanged);
+    this.textArea.addEventListener("paste", textAreaChanged);
+    this.textArea.addEventListener("cut", textAreaChanged);
+    this.textArea.addEventListener("delete", textAreaChanged);
+  }
+
+  _applyMoveHeader() {
+    let pos1 = 0,
+      pos2 = 0,
+      pos3 = 0,
+      pos4 = 0;
+
+    this.header.addEventListener("mousedown", (e) => {
+      e = e || window.event;
+      e.preventDefault();
+      this._active();
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      this.container.onmousemove = elementDrag;
+      this.container.onmouseup = closeDragElement;
+    });
+
+    const elementDrag = (e) => {
+      e = e || window.event;
+      e.preventDefault();
+      pos1 = pos3 - e.clientX;
+      pos2 = pos4 - e.clientY;
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      this.setPosition(this.node.offsetTop - pos2, this.node.offsetLeft - pos1);
+    };
+
+    const closeDragElement = () => {
+      this.container.onmouseup = null;
+      this.container.onmousemove = null;
+    };
+  }
+
+  _applySizeBtn() {
+    let top = 0,
+      left = 0;
+
+    const sizeBtn = this.node.querySelector(".btn_size");
+    sizeBtn.addEventListener("mousedown", (e) => {
+      e = e || window.event;
+      e.preventDefault();
+      const rect = this.textArea.getBoundingClientRect();
+      top = rect.top;
+      left = rect.left;
+      this.container.onmousemove = elementDrag;
+      this.container.onmouseup = closeDragElement;
+    });
+
+    const elementDrag = (e) => {
+      e = e || window.event;
+      e.preventDefault();
+      const width = e.clientX - left;
+      const height = e.clientY - top;
+      this.setSize(width, height);
+    };
+
+    const closeDragElement = () => {
+      this.container.onmouseup = null;
+      this.container.onmousemove = null;
+    };
+  }
+
+  _applyCloseBtn() {
+    const closeBtn = this.node.querySelector(".btn_close");
+    closeBtn.addEventListener("click", (event) => {
+      this.remove();
+    });
+  }
+}
+
+export default Memo;
