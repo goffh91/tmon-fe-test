@@ -14,7 +14,7 @@ function createMemo(top, left) {
   memo.append();
 }
 
-window.addEventListener("load", function () {
+window.addEventListener("load", () => {
   if (Storage.hasMemo()) {
     Storage.loadMemo().forEach((memoData) => {
       const node = memoTemplate.content.cloneNode(true).querySelector(".memo");
@@ -25,7 +25,7 @@ window.addEventListener("load", function () {
 
   container.addEventListener(
     "contextmenu",
-    function (event) {
+    (event) => {
       event.preventDefault();
       createMemo(event.offsetY, event.offsetX);
 
