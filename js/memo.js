@@ -1,9 +1,6 @@
 class Memo {
-  constructor(node, container, memoMap) {
+  constructor(node, factory) {
     this.node = node;
-    this.container = container;
-    this.memoMap = memoMap;
-
     this.id = new Date().getTime();
     this.position = { top: 0, left: 0 };
     this.size = { width: 200, height: 100 };
@@ -20,14 +17,17 @@ class Memo {
 
     this._applySizeBtn();
     this._applyCloseBtn();
+
+    this.factory = factory;
+    this.factory.add(this);
   }
 
-  static create(data, node, container, memoMap) {
+  static create(data, node, factory) {
     const { id, text, zIndex, position, size } = JSON.parse(data);
-    const memo = new Memo(node, container, memoMap);
+    const memo = new Memo(node, factory);
     memo.id = id;
     memo.setText(text);
-    memo.setZindex(zIndex);
+    memo.setZIndex(zIndex);
     memo.setPosition(position.top, position.left);
     memo.setSize(size.width, size.height);
     return memo;
@@ -43,17 +43,6 @@ class Memo {
     });
   }
 
-  append() {
-    this.container.appendChild(this.node);
-    this.setZindex(this.memoMap.size + 1);
-    this.memoMap.set(this.id, this);
-  }
-
-  remove() {
-    this.container.removeChild(this.node);
-    this.memoMap.delete(this.id);
-  }
-
   setPosition(top, left) {
     this.node.style.top = `${top}px`;
     this.node.style.left = `${left}px`;
@@ -66,7 +55,7 @@ class Memo {
     this.size = { width, height };
   }
 
-  setZindex(zIndex) {
+  setZIndex(zIndex) {
     this.zIndex = zIndex;
     this.node.style.zIndex = zIndex;
   }
@@ -77,13 +66,13 @@ class Memo {
   }
 
   _active() {
-    const prevZindex = this.zIndex;
-    this.memoMap.forEach((memo) => {
+    const prevZIndex = this.zIndex;
+    this.factory.memoMap.forEach((memo) => {
       if (memo.id === this.id) {
-        this.setZindex(this.memoMap.size);
+        this.setZIndex(this.factory.memoMap.size);
       } else {
-        if (memo.zIndex > prevZindex) {
-          memo.setZindex(memo.zIndex - 1);
+        if (memo.zIndex > prevZIndex) {
+          memo.setZIndex(memo.zIndex - 1);
         }
       }
     });
@@ -111,8 +100,8 @@ class Memo {
       this._active();
       pos3 = e.clientX;
       pos4 = e.clientY;
-      this.container.onmousemove = elementDrag;
-      this.container.onmouseup = closeDragElement;
+      this.factory.container.onmousemove = elementDrag;
+      this.factory.container.onmouseup = closeDragElement;
     });
 
     const elementDrag = (e) => {
@@ -126,8 +115,8 @@ class Memo {
     };
 
     const closeDragElement = () => {
-      this.container.onmouseup = null;
-      this.container.onmousemove = null;
+      this.factory.container.onmouseup = null;
+      this.factory.container.onmousemove = null;
     };
   }
 
@@ -142,8 +131,8 @@ class Memo {
       const rect = this.textArea.getBoundingClientRect();
       top = rect.top;
       left = rect.left;
-      this.container.onmousemove = elementDrag;
-      this.container.onmouseup = closeDragElement;
+      this.factory.container.onmousemove = elementDrag;
+      this.factory.container.onmouseup = closeDragElement;
     });
 
     const elementDrag = (e) => {
@@ -155,8 +144,8 @@ class Memo {
     };
 
     const closeDragElement = () => {
-      this.container.onmouseup = null;
-      this.container.onmousemove = null;
+      this.factory.container.onmouseup = null;
+      this.factory.container.onmousemove = null;
     };
   }
 
